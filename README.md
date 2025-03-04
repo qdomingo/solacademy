@@ -1,2 +1,2 @@
 # solacademy
-Parte back de la Sol Acadeny
+Parte back de la Sol Academy
