@@ -26,6 +26,11 @@
         SET inicio = #{inicio}, fin = #{fin}
         WHERE id = #{id}
     </update>
+    <update id="updateScheduleTask">
+        UPDATE schedule
+        SET task_id = #{task_id}
+        WHERE id = #{id}
+    </update>
     <delete id="deleteSchedule">
         DELETE FROM schedule WHERE id = #{id}
     </delete>

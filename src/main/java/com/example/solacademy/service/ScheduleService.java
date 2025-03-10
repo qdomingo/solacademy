@@ -1,5 +1,7 @@
 package com.example.solacademy.service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.solacademy.mapper.ScheduleMapper;
+import com.example.solacademy.mapper.StudentMapper;
+import com.example.solacademy.model.Payment;
 import com.example.solacademy.model.Schedule;
 
 @Service
@@ -19,6 +23,9 @@ public class ScheduleService {
 	
 	@Autowired
     private ScheduleMapper scheduleMapper;
+	
+	@Autowired
+    private StudentMapper studentMapper;
 
     public List<Schedule> getAllSchedules() {
         return scheduleMapper.getAllSchedules();
@@ -35,8 +42,13 @@ public class ScheduleService {
     public int createSchedule(Schedule schedule) {
     	
     	int resultado = 0;
+    	int resultadoPayment = 0;
+    	int rate = 10;
     	Long maxId = scheduleMapper.getMaxScheduleID();
-
+    	if(schedule.getStudent_id() != null) {
+    		rate = studentMapper.getRateStudentById(schedule.getStudent_id());
+    	}
+    	
     	if(schedule.getWeekly() == 1) {
 
     		// Creamos serie_id
@@ -78,29 +90,86 @@ public class ScheduleService {
                 
                 //persitimos
                 resultado = scheduleMapper.createSchedule(schedule);
+                
+                // añadir logica para crear los pagos
+        		Payment payment = setPayment(schedule, true, rate);
+        		resultadoPayment = studentMapper.createPayment(payment);
 
         	}
     		schedule.setId(maxId);
     	} else {
     		schedule.setId(maxId);
     		resultado = scheduleMapper.createSchedule(schedule);
+    		
+    		// añadir logica para crear los pagos
+    		Payment payment = setPayment(schedule, true, rate);
+    		resultadoPayment = studentMapper.createPayment(payment);
     	}
     	
-        return resultado;
+        return resultado + resultadoPayment;
     }
     
     public int updateSchedule(Schedule schedule) {
-        return scheduleMapper.updateSchedule(schedule);
+    	
+    	// schedule update
+    	int updateSchedule = scheduleMapper.updateSchedule(schedule);
+    	int rate = 0; // esta tasa no la updateamos, no afecta
+
+    	// payment update
+    	int updatePayment = 1;
+        Payment payment = setPayment(schedule, false, rate);
+        updatePayment = studentMapper.updatePayment(payment);
+
+        return updateSchedule + updatePayment;
     }
     
     public int deleteSchedule(Long id) {
-        return scheduleMapper.deleteSchedule(id);
+    	int deleteSchedule = scheduleMapper.deleteSchedule(id);
+    	int deletePayment = studentMapper.deletePayment(id);
+        return deleteSchedule + deletePayment;
     }
     
     public int deleteScheduleSerie(Schedule schedule) {
     	Long id = schedule.getStudent_id();
     	String serie_id = schedule.getSerie_id();
-        return scheduleMapper.deleteScheduleSerie(id, serie_id);
+    	int deleteScheduleSerie = scheduleMapper.deleteScheduleSerie(id, serie_id);
+    	int deletePaymentsSerie = studentMapper.deletePaymentsSerie(id, serie_id);
+        return deleteScheduleSerie + deletePaymentsSerie;
+    }
+    
+    public Payment setPayment (Schedule schedule, boolean creacion, int rate) {
+    	
+    	Payment payment = new Payment();
+    	payment.setSchedule_id(schedule.getId());
+    	payment.setInicio(schedule.getInicio());
+    	payment.setFin(schedule.getFin());
+    	
+    	//calculo de la duracion
+        // Formato de las fechas y Fechas en formato de cadena
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        String dateStr1 = schedule.getInicio().substring(0, 16);
+        String dateStr2 = schedule.getFin().substring(0, 16);
+
+        // Convertir las cadenas a objetos LocalDateTime
+        LocalDateTime dateTime1 = LocalDateTime.parse(dateStr1, formatter);
+        LocalDateTime dateTime2 = LocalDateTime.parse(dateStr2, formatter);
+
+        // Calcular la diferencia entre las dos fechas y Obtener la diferencia en minutos
+        Duration duration = Duration.between(dateTime1, dateTime2);
+        long differenceInMinutes = duration.toMinutes();
+        
+        payment.setDuration((int)differenceInMinutes);
+        
+        // seteamos campos necesarios en la creacion, pero no en el update
+        if (creacion) {
+        	payment.setTitle(schedule.getTitle());
+        	payment.setStudent_id(schedule.getStudent_id());
+        	payment.setSerie_id(schedule.getSerie_id());
+        	payment.setPaid(0);
+        	payment.setRate(rate);
+        }
+    	
+    	return payment;
     }
 
 }

@@ -15,7 +15,8 @@ import com.example.solacademy.model.Schedule;
 import com.example.solacademy.service.ScheduleService;
 
 @RestController
-@CrossOrigin(origins = {"http://solacademy.qdomingo.com", "http://localhost:4200", "http://localhost:4300"})
+@CrossOrigin(origins = {"http://solacademy.qdomingo.com", "http://localhost:4200", "http://localhost:4300",
+		"http://solacademy-aws.qdomingo.com:4200"})
 @RequestMapping("/api/schedules")
 public class ScheduleResource {
 

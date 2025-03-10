@@ -16,6 +16,7 @@ private String nickname;
 private String name;
 private String email;
 private String comments;
+private int rate;
 private List<Task> tasks;
 
 public Long getId() {
@@ -47,6 +48,12 @@ public String getComments() {
 }
 public void setComments(String comments) {
 	this.comments = comments;
+}
+public int getRate() {
+	return rate;
+}
+public void setRate(int rate) {
+	this.rate = rate;
 }
 public List<Task> getTasks() {
 	return tasks;

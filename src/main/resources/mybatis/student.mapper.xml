@@ -3,6 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.solacademy.mapper.StudentMapper">	
+
 	<select id="getAllStudents" resultType="com.example.solacademy.model.Student">
         SELECT * FROM students
     </select>
@@ -12,18 +13,24 @@
     <select id="getMaxStudentID" resultType="long">
         SELECT nvl(max(id)+1,1) FROM students
     </select>
+    <select id="getRateStudentById" resultType="int">
+        SELECT rate FROM students WHERE id = #{id}
+    </select>
     <insert id="createStudent">
-        INSERT INTO students(id, nickname, name, email, comments)
-        VALUES(#{id}, #{nickname}, #{name}, #{email, jdbcType=VARCHAR}, #{comments, jdbcType=VARCHAR})    
+        INSERT INTO students(id, nickname, name, email, comments, rate)
+        VALUES(#{id}, #{nickname}, #{name}, #{email, jdbcType=VARCHAR}, #{comments, jdbcType=VARCHAR}, #{rate, jdbcType=NUMERIC})    
     </insert>
     <update id="updateStudent">
         UPDATE students
-        SET nickname = #{nickname}, name = #{name}, email = #{email, jdbcType=VARCHAR}, comments = #{comments, jdbcType=VARCHAR}
+        SET nickname = #{nickname}, name = #{name}, email = #{email, jdbcType=VARCHAR}, 
+        comments = #{comments, jdbcType=VARCHAR}, rate = #{rate, jdbcType=NUMERIC}
         WHERE id = #{id}
     </update>
     <delete id="deleteStudent">
         DELETE FROM students WHERE id = #{id}
     </delete>
+    
+    
     <select id="getMaxTaskID" resultType="long">
         SELECT nvl(max(id)+1,1) FROM tasks
     </select>
@@ -47,4 +54,41 @@
     <delete id="deleteTasksByStudent">
         DELETE FROM tasks WHERE student_id = #{id}
     </delete>
+    
+    
+    <select id="getPaymentsByStudentId" resultType="com.example.solacademy.model.Payment">
+        SELECT * FROM payments WHERE student_id = #{id}
+        order by inicio
+    </select>
+    <insert id="createPayment">
+        INSERT INTO payments(schedule_id, student_id, title, inicio, fin, duration, serie_id, paid, rate)
+        VALUES(#{schedule_id}, #{student_id}, #{title}, #{inicio}, #{fin}, #{duration}, 
+        #{serie_id, jdbcType=VARCHAR}, #{paid, jdbcType=NUMERIC}, #{rate, jdbcType=NUMERIC})    
+    </insert>
+    <update id="updatePayment">
+        UPDATE payments
+        SET 
+        	inicio = #{inicio, jdbcType=VARCHAR},
+        	fin = #{fin, jdbcType=VARCHAR},
+        	duration = #{duration, jdbcType=NUMERIC},
+        	paid = #{paid, jdbcType=NUMERIC}
+        WHERE schedule_id = #{schedule_id, jdbcType=NUMERIC}
+    </update>
+    <update id="updateStudentPaymentRate">
+        UPDATE payments
+        SET rate = #{rate, jdbcType=NUMERIC}
+        WHERE student_id = #{id, jdbcType=NUMERIC}
+        AND paid = 0
+    </update>
+    <delete id="deletePayment">
+        DELETE FROM payments WHERE schedule_id = #{id} and paid = 0
+    </delete>
+    <delete id="deletePaymentsByStudent">
+        DELETE FROM payments WHERE student_id = #{id} and paid = 0
+    </delete>
+    <delete id="deletePaymentsSerie">
+        DELETE FROM payments WHERE student_id = #{id} 
+        AND serie_id like #{serie_id} AND paid = 0
+    </delete>
+    
 </mapper>
